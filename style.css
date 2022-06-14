@@ -61,6 +61,7 @@ with others.
  }
  .div{
  	height: 400px;
+ 	width: 500px;
  	border: 2px black solid;
  	margin: 20px;
  }

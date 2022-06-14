@@ -184,7 +184,141 @@ add_shortcode( 'list', 'shortcode_movie_post_type' );
 
 //Equeue Styles
 function themeslug_enqueue() {
-    wp_enqueue_style( 'my-theme',get_stylesheet_uri());
-	wp_enqueue_script( 'script', get_template_directory_uri() . '../js/script.js');
+    
+	wp_enqueue_script( 'custom_js', get_stylesheet_directory_uri() . "/js/script.js" ,array ('jquery') );
+    wp_localize_script('custom_js', 'ajax_object', array( 'ajaxurl' => admin_url( 'admin-ajax.php' ) ));
+	// print_r(get_stylesheet_directory_uri());
+	// die();
+	// wp_enqueue_script('jQuery');
+		wp_enqueue_style('parent',get_template_directory_uri().'/style.css');
+		wp_enqueue_style( 'child',get_stylesheet_uri());
 }
 add_action( 'wp_enqueue_scripts', 'themeslug_enqueue');
+
+
+
+
+
+
+
+
+
+
+
+
+// Search using AJAX
+
+
+/*
+ ==================
+ Ajax Search
+======================	 
+*/
+
+
+
+// the ajax function
+add_action('wp_ajax_data_fetch' , 'data_fetch');
+add_action('wp_ajax_nopriv_data_fetch','data_fetch');
+function data_fetch(){
+// die();
+	$curentpage = get_query_var('paged');
+    $the_query = new WP_Query( array( 'posts_per_page' => 3, 's' => esc_attr( $_POST['keyword'] ), 'post_type' => 'project','paged' => $curentpage,'publish_status' => 'published', ) );
+    if( $the_query->have_posts() ) :
+        while( $the_query->have_posts() ): $the_query->the_post(); ?>
+
+            
+
+ <center>     
+        <h2> <a href=" <?php the_permalink(); ?> "> <?php the_title(); ?></a></h2>
+        <a href=" <?php the_permalink(); ?> ">  <?php the_post_thumbnail();?> </a>
+        <p><?php the_content(); ?></p>
+    </center>
+
+
+
+
+
+
+        <?php endwhile;
+		wp_reset_postdata();
+
+		echo paginate_links(array(
+            'total' => $query->max_num_pages
+        ));   
+	else: 
+		echo '<h3>No Results Found</h3>';
+    endif;
+
+
+}
+// add the ajax fetch js
+add_action( 'wp_footer', 'ajax_fetch' );
+function ajax_fetch() {
+
+
+}
+
+
+
+
+
+// ASC and DESC
+
+add_action('wp_ajax_data_drop' , 'data_drop');
+add_action('wp_ajax_nopriv_data_drop' , 'data_drop');
+
+function data_drop() {
+
+
+    $curentpage = get_query_var('paged');
+    $args= array( 
+    	'paged' => $curentpage,
+        'posts_per_page' => 4, 
+        'orderby' => 'title',
+        'order' => 'ASC',
+        'post_type' => array('project') );
+    if ($_POST['keyword'] == 'asc') {
+    	$args['order'] = 'ASC';
+    }
+    elseif ($_POST['keyword'] == 'desc') {
+    	$args['order'] = 'DESC';
+    }
+    if ($_POST['keyword'] == 'old') {
+    	$args['orderby'] = 'date';$args['order'] = 'ASC';
+    }
+    elseif ($_POST['keyword'] == 'new') {
+   		$args['orderby'] = 'date';$args['order'] = 'DESC';
+    }
+
+
+	$the_query = new WP_Query($args);
+    if( $the_query->have_posts() ) :
+        ob_start();
+        while( $the_query->have_posts() ): $the_query->the_post();  ?>
+       <center> 
+<div style="background-color: lightblue; border: 1px solid black; float:left; width: 500px;margin: 5px;height: 300px;"> 
+    <h1 style="text-align: center;"> <a style="align-items: center;" href=" <?php the_permalink(); ?> "> <?php the_title(); ?></a></h2></h1>
+    <a href=" <?php the_permalink(); ?> ">  <?php the_post_thumbnail();?> </a>
+    <p style="text-align: center;" ><?php the_content(); ?></p> 
+</div>  </center>
+    <?php  
+        endwhile; 
+
+        
+
+        $output_string = ob_get_contents();
+        ob_end_clean();
+        wp_die($output_string); 
+        wp_reset_postdata(); 
+
+        echo paginate_links(array(
+            'total' => $query->max_num_pages
+        ));
+
+    endif;
+    die();
+
+
+
+}
